@@ -128,10 +128,10 @@ assertz(player_health(Y)).
 /* Loop agar game tetap berjalan */
 game :-
 repeat,
+drawMap(1,1,0),
 write(' << Command >> '),
 read(X),
 execute(X),
-drawMap(1,1,10),
 (win; /*lose;*/ X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
