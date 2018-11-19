@@ -131,6 +131,7 @@ repeat,
 write(' << Command >> '),
 read(X),
 execute(X),
+drawMap(1,1,10),
 (win; /*lose;*/ X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
@@ -221,6 +222,7 @@ w :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12,Timer) :- print('X'), nl, !.
 drawMap(Row,Col,Timer) :-
+  (player_location(X,Y), Row == X, Col == Y, Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
