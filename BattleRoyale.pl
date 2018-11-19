@@ -32,7 +32,7 @@ execute(_) :- write('Invalid command. Please try again.'), nl.
 win :- enemy_count == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
 /*lose :- health == 0, writeln('Your health reaches 0. No Chicken dinner for you!'), !.
 lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.*/
-quit :- write('Alice scheme is successful. You have been killed.'), retractall(location(X,Y)), retractall(inventory(X)), sleep(2), nl, nl, !, credit.
+quit :- retractall(location(X,Y)), retractall(inventory(X)), nl, nl, !, credit.
 
 /* Deklarasi Fakta */
 location(2,2,5,5,openField).
@@ -105,11 +105,11 @@ assertz(inventory(none)).
 /*-------Debugging----------*/
 print_health :-
 player_health(X),
-write(X).
+write(X), nl.
 
 print_armor :-
 player_armor(X),
-write(X).
+write(X), nl.
 
 print_location :-
 player_location(X,Y),
@@ -131,7 +131,7 @@ repeat,
 write(' << Command >> '),
 read(X),
 execute(X),
-(win; X==quit), !.
+(win; /*lose;*/ X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
@@ -146,18 +146,15 @@ write('                                          |___/                          
 write(' Welcome to PUBG Legends! '), nl,
 write(' To see all the command, type help'), nl,
 write(' Deploying in T-5 second '), nl,
-/*write(' 5...'), nl,
+write(' 5...'), nl,
 sleep(1), write(' 4...'), nl,
 sleep(1), write(' 3...'), nl,
 sleep(1), write(' 2...'), nl,
 sleep(1), write(' 1...'), nl,
 sleep(1), write(' Deploying and opening parachute '), nl,
-sleep(1), write(' You landed safely. Kill all enemies '), nl, nl,*/
+sleep(1), write(' You landed safely. Kill all enemies '), nl, nl,
 dynamic_facts,
 initialize_game,
-print_health,
-print_armor,
-print_location,
 game.
 
 /* help() : menampilkan fungsi-fungsi yang dapat dipanggil dalam permainan, dapat mengandung informasi lain yang mungkin dibutuhkan */
@@ -210,16 +207,16 @@ sleep(2), halt.
 
 
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-n :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)).
+n :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-s :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)).
+s :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-e :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)).
+e :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
-w :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)).
+w :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12,Timer) :- print('X'), nl, !.
@@ -235,7 +232,7 @@ drawMap(Row,Col,Timer) :-
 
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
-write(' Health    : '), print_health, nl,
-write(' Armor     : '), print_armor, nl,
+write(' Health    : '), print_health,
+write(' Armor     : '), print_armor,
 write(' Weapon    : '), write(player_weapon), nl,
-write(' Inventory : '), write(inventory).
+write(' Inventory : '), write(inventory), nl.
