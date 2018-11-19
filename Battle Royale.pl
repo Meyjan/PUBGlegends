@@ -9,7 +9,7 @@
 execute(help) :- help, nl, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
-execute(map) :- dMap(1,1,Timer), nl, !.
+execute(map) :- drawMap(1,1,Timer), nl, !.
 execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
@@ -67,7 +67,7 @@ type(aidkit,bandage).
 :- dynamic(player_weapon/1).
 :- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
-:- dynamic(dMap/3).
+:- dynamic(drawMap/3).
 
 /* Deklarasi Rule */
 dynamic_facts :-
@@ -153,15 +153,17 @@ e :- retractall(player_location(X,Y), Z is X + 1, assertz(player_location(Z,Y).
 /* w() : menggerakkan pemain satu petak ke arah barat */
 w :- retractall(player_location(X,Y), Z is X - 1, assertz(player_location(Z,Y).
 
-/* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemaim */
-dMap(12,12,Timer) :- print('X'), nl, !.
-dMap(Row,Col,Timer) :-
-(Row > 1, Col > 1, Row < 12, Col < 12, print('- '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
-(Row =< 1, Col < 12, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
-(Row =< 1, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, dMap(NextRow,NextCol,Timer),!);
-(Row >= 12, Col < 12, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
-(Row > 1, Col =< 1, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer), !);
-(Row > 1, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, dMap(NextRow,NextCol,Timer),!).
+/* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
+drawMap(12,12,Timer) :- print('X'), nl, !.
+drawMap(Row,Col,Timer) :- 
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer), !);
+  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!).
 
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
