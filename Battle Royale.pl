@@ -19,14 +19,69 @@ execute(drop(object)) :- drop(object), nl, !.
 execute(use(object)) :- use(object), nl, !.
 execute(attack) :- help, nl, !.
 execute(status) :- status, nl, !.
+execute(quit) :- quit, nl, !.
 /*execute(save(file)) :- save(file), nl, !.
 execute(load(file)) :- load(file), nl, !. */
+execute(_) :- write('Invalid command. Please try again.'), nl.
+
+/* Syarat game beres */
+win :-
+dead :-
+quit :- write('Alice scheme is successful. You have been killed.'), retractall(location(X,Y)), retractall(inventory(X)), sleep(2), nl, nl, !, credit.
+
+/* Deklarasi Fakta */
+/* map : peta permainan */
+map :-
+([['X','X','X','X','X','X','X','X','X','X','X','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','-','-','-','-','-','-','-','-','-','-','X'],
+['X','X','X','X','X','X','X','X','X','X','X','X']]).
+
+/* weapon(X,Y) : Senjata X dapat menampung Y peluru*/
+weapon(deagle,7).
+weapon(m4,30).
+weapon(shotgun,5).
+/* armor(X,Y) : Armor X memiliki Y endurance */
+armor(lvl1,30).
+armor(lvl2,60).
+armor(lvl3,100).
+/* aidkit(X,Y) : Aidkit X menambah Y health */
+aidkit(drink,20).
+aidkit(bandage,50).
+aidkit(firstaidkit,100).
+/* item(X,Y) : Item Y bertipe X */
+item(weapon,deagle).
+item(weapon,m4).
+item(weapon,shotgun).
+item(armor,lvl1).
+item(armor,lvl2).
+item(armor,lvl3).
+item(aidkit,drink).
+item(aidkit,bandage).
+item(aidkit,firstaidkit).
+
+/* Variabel Dinamik */
+:- dynamic(location/2).
+:- dynamic(health/1).
+:- dynamic(armor/1).
+:- dynamic(weapon/1).
+:- dynamic(ammo/1).
+:- dynamic(inventory/1).
+
 
 /* Deklarasi Rule */
-dynamic_facts :- retractall(currentlocation(X)), retractall(inventory(X)), assertz(currentlocation(1,1)), assertz(inventory(none)). 
+dynamic_facts :- retractall(location(X,Y)), retractall(inventory(X)), random(2,11,X), random(2,11,Y), assertz(location(X,Y)), assertz(inventory(none)).
 
 /* Loop agar game tetap berjalan */
-game() :- repeat, read(X), execute(X), (win; X==quit), !.
+game() :- repeat, read(X), execute(X), (win; dead; X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
@@ -71,8 +126,8 @@ write(' E = enemy  '), nl,
 write(' - = accessible  '), nl,
 write(' X = inaccessible ').
 
-/* quit() : mengakhiri permainan */
-quit :-
+/* credit() : tampilan credit */
+credit :-
 write('  _______  _    _            _   _  _  __  __     __ ____   _    _  '), nl,
 write(' |__   __|| |  | |    /\\    | \\ | || |/ /  \\ \\   / // __ \\ | |  | | '), nl,
 write('    | |   | |__| |   /  \\   |  \\| || \' /    \\ \\_/ /| |  | || |  | | '), nl,
