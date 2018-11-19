@@ -25,8 +25,9 @@ execute(load(file)) :- load(file), nl, !. */
 execute(_) :- write('Invalid command. Please try again.'), nl.
 
 /* Syarat game beres */
-win :-
-dead :-
+win :- enemy_count == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
+lose :- health == 0, writeln('Your health reaches 0. No Chicken dinner for you!'), !.
+lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.
 quit :- write('Alice scheme is successful. You have been killed.'), retractall(location(X,Y)), retractall(inventory(X)), sleep(2), nl, nl, !, credit.
 
 /* Deklarasi Fakta */
@@ -44,6 +45,10 @@ map :-
 ['X','-','-','-','-','-','-','-','-','-','-','X'],
 ['X','-','-','-','-','-','-','-','-','-','-','X'],
 ['X','X','X','X','X','X','X','X','X','X','X','X']]).
+
+health(100).
+enemy_count(10).
+current_armor(0).
 
 /* weapon(X,Y) : Senjata X dapat menampung Y peluru*/
 weapon(deagle,7).
@@ -67,6 +72,13 @@ item(armor,lvl3).
 item(aidkit,drink).
 item(aidkit,bandage).
 item(aidkit,firstaidkit).
+
+/* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
+status :-
+write('Health: '), writeln(health),
+write('Armor: '), writeln(armor),
+write('Weapon: '), writeln(current_weapon),
+write_inventory.
 
 /* Variabel Dinamik */
 :- dynamic(location/2).
