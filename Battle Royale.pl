@@ -9,7 +9,7 @@
 execute(help) :- help, nl, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
-execute(map) :- map, nl, !.
+execute(map) :- dMap(1,1,Timer), nl, !.
 execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
@@ -31,69 +31,51 @@ lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No C
 quit :- write('Alice scheme is successful. You have been killed.'), retractall(location(X,Y)), retractall(inventory(X)), sleep(2), nl, nl, !, credit.
 
 /* Deklarasi Fakta */
-/* map : peta permainan */
-map :-
-([['X','X','X','X','X','X','X','X','X','X','X','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','-','-','-','-','-','-','-','-','-','-','X'],
-['X','X','X','X','X','X','X','X','X','X','X','X']]).
-
-health(100).
-enemy_count(10).
-current_armor(0).
+location(2,2,5,5,openField).
+location(4,4,5,5,karnakTemple).
+location(2,6,5,11,desert).
+location(4,6,5,7,lostCityOfIram).
+location(5,2,11,5,jungle).
+location(5,4,11,5,cuevaDelDiablo).
+location(5,6,11,11,miltaTemple).
+location(5,6,11,7,mountain).
 
 /* weapon(X,Y) : Senjata X dapat menampung Y peluru*/
-weapon(deagle,7).
-weapon(m4,30).
-weapon(shotgun,5).
+weapon(m16,30).
+weapon(rpg7,2).
 /* armor(X,Y) : Armor X memiliki Y endurance */
 armor(lvl1,30).
 armor(lvl2,60).
-armor(lvl3,100).
+/* ammo(X,Y) : Senjata X menggunakan ammo Y */
+ammo(m16,rifleammo).
+ammo(rpg7,rocket).
 /* aidkit(X,Y) : Aidkit X menambah Y health */
 aidkit(drink,20).
 aidkit(bandage,50).
-aidkit(firstaidkit,100).
 /* item(X,Y) : Item Y bertipe X */
-item(weapon,deagle).
-item(weapon,m4).
-item(weapon,shotgun).
-item(armor,lvl1).
-item(armor,lvl2).
-item(armor,lvl3).
-item(aidkit,drink).
-item(aidkit,bandage).
-item(aidkit,firstaidkit).
-
-/* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
-status :-
-write('Health: '), writeln(health),
-write('Armor: '), writeln(armor),
-write('Weapon: '), writeln(current_weapon),
-write_inventory.
+type(weapon,[m16,rpg7]).
+type(armor,[jacket,vest]).
+type(ammo,rifleammo).
+type(ammo,rocket).
+type(aidkit,drink).
+type(aidkit,bandage).
 
 /* Variabel Dinamik */
-:- dynamic(location/2).
-:- dynamic(health/1).
-:- dynamic(armor/1).
-:- dynamic(weapon/1).
-:- dynamic(ammo/1).
+:- dynamic(player_location/2).
+:- dynamic(player_health/1).
+:- dynamic(player_armor/1).
+:- dynamic(player_weapon/1).
+:- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
-
+:- dynamic(dMap/3).
 
 /* Deklarasi Rule */
-dynamic_facts :- retractall(location(X,Y)), retractall(inventory(X)), random(2,11,X), random(2,11,Y), assertz(location(X,Y)), assertz(inventory(none)).
+dynamic_facts :-
+retractall(player_location(X,Y)), retractall(player_health(X)), retractall(player_armor(X)), retractall(player_weapon(X)), retractall(player_ammo(X)), retractall(inventory(X)),
+random(2,11,X), random(2,11,Y), assertz(player_location(X,Y)), assertz(player_health(100)), assertz(player_armor(0)), assertz(player_weapon(none)), assertz(player_ammo(0)), assertz(inventory(none)).
 
 /* Loop agar game tetap berjalan */
-game() :- repeat, read(X), execute(X), (win; dead; X==quit), !.
+game() :- repeat, read(X), execute(X), (win; lose; X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
@@ -160,18 +142,30 @@ sleep(2), halt.
 
 
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-
+n :- retractall(player_location(X,Y), Z is Y + 1, assertz(player_location(X,Z).
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-
+s :- retractall(player_location(X,Y), Z is Y - 1, assertz(player_location(X,Z).
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-
+e :- retractall(player_location(X,Y), Z is X + 1, assertz(player_location(Z,Y).
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
+w :- retractall(player_location(X,Y), Z is X - 1, assertz(player_location(Z,Y).
 
-
-/* map() : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemaim */
-
+/* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemaim */
+dMap(12,12,Timer) :- print('X'), nl, !.
+dMap(Row,Col,Timer) :-
+(Row > 1, Col > 1, Row < 12, Col < 12, print('- '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
+(Row =< 1, Col < 12, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
+(Row =< 1, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, dMap(NextRow,NextCol,Timer),!);
+(Row >= 12, Col < 12, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer),!);
+(Row > 1, Col =< 1, print('X '), !, NextCol is Col+1, dMap(Row,NextCol,Timer), !);
+(Row > 1, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, dMap(NextRow,NextCol,Timer),!).
 
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
+status :-
+write(' Health    : '), write(health), nl,
+write(' Armor     : '), write(armor), nl,
+write(' Weapon    : '), write(current_weapon), nl,
+write(' Inventory : '), write(inventory).
