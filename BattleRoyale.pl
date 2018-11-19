@@ -5,6 +5,9 @@
 /* Tanggal			: 21 November 2018 */
 /* Deskripsi		: Membuat permainan battle royale menggunakan prolog */
 
+/*Clear screen*/
+cls :- write('\e[2J').
+
 /* Implementasi fungsi execute */
 execute(help) :- help, nl, !.
 execute(half):- half,!.
@@ -29,7 +32,7 @@ execute(load(file)) :- load(file), nl, !. */
 execute(_) :- write('Invalid command. Please try again.'), nl.
 
 /* Syarat game beres */
-win :- enemy_count == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
+win :- enemy_count(X), X == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
 /*lose :- health == 0, writeln('Your health reaches 0. No Chicken dinner for you!'), !.
 lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.*/
 quit :- retractall(location(X,Y)), retractall(inventory(X)), nl, nl, !, credit.
@@ -76,6 +79,7 @@ type(aidkit,bandage).
 :- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
 :- dynamic(drawMap/3).
+:- dynamic(enemy_count/1).
 
 /* Deklarasi Rule */
 dynamic_facts :-
@@ -84,18 +88,22 @@ retractall(player_health(X)),
 retractall(player_armor(X)),
 retractall(player_weapon(X)),
 retractall(player_ammo(X)),
-retractall(inventory(X)).
+retractall(inventory(X)),
+retractall(enemy_count(X)).
 
 /* Fakta untuk kondisi awal */
 player_health(X).
 player_armor(X).
 player_ammo(X).
 player_location(X,Y).
+enemy_count(X).
 
 /* Inisialisasi Game */
 initialize_game :-
 assertz(player_health(100)),
 assertz(player_armor(0)),
+random(10,20,Z),
+assertz(enemy_count(Z)),
 random(2,11,X),
 random(2,11,Y),
 assertz(player_location(X,Y)),
@@ -117,6 +125,10 @@ write(X),
 write(' '),
 write(Y), nl.
 
+print_enemy_count :-
+enemy_count(X),
+write(X), nl.
+
 half :-
 player_health(X),
 Y is X/2,
@@ -128,7 +140,9 @@ assertz(player_health(Y)).
 /* Loop agar game tetap berjalan */
 game :-
 repeat,
+cls,
 drawMap(1,1,0),
+nl,
 write(' << Command >> '),
 read(X),
 execute(X),
@@ -136,6 +150,7 @@ execute(X),
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
+cls,
 write('  _____   _    _  ____    _____  _                                _       '), nl,
 write(' |  __ \\ | |  | ||  _ \\  / ____|| |                              | |      '), nl,
 write(' | |__) || |  | || |_) || |  __ | |  ___   __ _   ___  _ __    __| | ___  '), nl,
@@ -154,12 +169,14 @@ sleep(1), write(' 2...'), nl,
 sleep(1), write(' 1...'), nl,
 sleep(1), write(' Deploying and opening parachute '), nl,
 sleep(1), write(' You landed safely. Kill all enemies '), nl, nl,
+sleep(2),
 dynamic_facts,
 initialize_game,
 game.
 
 /* help() : menampilkan fungsi-fungsi yang dapat dipanggil dalam permainan, dapat mengandung informasi lain yang mungkin dibutuhkan */
 help :-
+nl,
 write(' start -- start the game! '), nl,
 write(' help -- show available commands '), nl,
 write(' quit -- quit the game '), nl,
@@ -184,7 +201,8 @@ write(' O = ammo  '), nl,
 write(' P = player  '), nl,
 write(' E = enemy  '), nl,
 write(' - = accessible  '), nl,
-write(' X = inaccessible ').
+write(' X = inaccessible '),
+sleep(5).
 
 /* credit() : tampilan credit */
 credit :-
@@ -237,4 +255,6 @@ status :-
 write(' Health    : '), print_health,
 write(' Armor     : '), print_armor,
 write(' Weapon    : '), write(player_weapon), nl,
-write(' Inventory : '), write(inventory), nl.
+write(' Inventory : '), write(inventory), nl,
+write(' Enemy left: '), print_enemy_count,
+sleep(3).
