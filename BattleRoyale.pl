@@ -224,18 +224,17 @@ sleep(2), halt.
 
 /* look() : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
 
-
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-n :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+e :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-s :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+w :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-e :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+s :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
-w :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+n :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12,Timer) :- print('X'), nl, !.
