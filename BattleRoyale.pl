@@ -6,7 +6,7 @@
 /* Deskripsi		: Membuat permainan battle royale menggunakan prolog */
 
 /*Clear screen*/
-cls :- write('\e[2J').
+/*cls :- shell(clear).*/
 
 /* Implementasi fungsi execute */
 execute(help) :- help, nl, !.
@@ -16,7 +16,7 @@ execute(print_location):- print_location, !.
 execute(print_armor):- print_armor, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
-execute(map) :- drawMap(1,1,Timer), nl, !.
+execute(map) :- drawMap(1,1), nl, !.
 execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
@@ -78,8 +78,9 @@ type(aidkit,bandage).
 :- dynamic(player_weapon/1).
 :- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
-:- dynamic(drawMap/3).
+:- dynamic(drawMap/2).
 :- dynamic(enemy_count/1).
+:- dynamic(timer/1).
 
 /* Deklarasi Rule */
 dynamic_facts :-
@@ -89,7 +90,8 @@ retractall(player_armor(X)),
 retractall(player_weapon(X)),
 retractall(player_ammo(X)),
 retractall(inventory(X)),
-retractall(enemy_count(X)).
+retractall(enemy_count(X)),
+retractall(timer(X)).
 
 /* Fakta untuk kondisi awal */
 player_health(X).
@@ -108,7 +110,8 @@ random(2,11,X),
 random(2,11,Y),
 assertz(player_location(X,Y)),
 assertz(player_weapon(none)),
-assertz(inventory(none)).
+assertz(inventory(none)),
+assertz(timer(0)).
 
 /*-------Debugging----------*/
 print_health :-
@@ -129,6 +132,10 @@ print_enemy_count :-
 enemy_count(X),
 write(X), nl.
 
+print_timer :-
+timer(X),
+write(X), nl.
+
 half :-
 player_health(X),
 Y is X/2,
@@ -140,17 +147,22 @@ assertz(player_health(Y)).
 /* Loop agar game tetap berjalan */
 game :-
 repeat,
-cls,
-drawMap(1,1,0),
+/*cls,*/
+increasetimer,
+drawMap(1,1),
 nl,
 write(' << Command >> '),
 read(X),
 execute(X),
 (win; /*lose;*/ X==quit), !.
 
+/* Increase timer game */
+increasetimer :-
+timer(X), Y is X+1, retractall(timer(X)), assertz(timer(Y)).
+
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
-cls,
+/*cls,*/
 write('  _____   _    _  ____    _____  _                                _       '), nl,
 write(' |  __ \\ | |  | ||  _ \\  / ____|| |                              | |      '), nl,
 write(' | |__) || |  | || |_) || |  __ | |  ___   __ _   ___  _ __    __| | ___  '), nl,
@@ -223,31 +235,35 @@ write('                    13517137 - Vincent Budianto                     '), n
 sleep(2), halt.
 
 /* look() : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
+look :-
+player_location(X,Y), location(A, B, C, D, E), X >= A, Y >= A, X =< C, Y =< D, !,  print('You are in '), print(E), !.
 
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-e :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+e :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-w :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+w :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-s :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+s :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
-n :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+n :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
-drawMap(12,12,Timer) :- print('X'), nl, !.
-drawMap(Row,Col,Timer) :-
-  (player_location(X,Y), Row == X, Col == Y, Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer), !);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
-(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!).
+drawMap(12,12) :- print('X'), nl, !.
+drawMap(Row,Col) :-
+(player_location(X,Y), Row == Y, Col == X, factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol),!);
+(factor(Min,Max), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol), !);
+(factor(Min,Max), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol),!);
+(factor(Min,Max), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol),!).
+/* faktor untuk penentu X saat timer dijalankan */
+factor(Min,Max) :- (timer(Timer), Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor)).
 
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
