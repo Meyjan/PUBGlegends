@@ -7,6 +7,10 @@
 
 /* Implementasi fungsi execute */
 execute(help) :- help, nl, !.
+execute(half):- half,!.
+execute(print_health):- print_health, !.
+execute(print_location):- print_location, !.
+execute(print_armor):- print_armor, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
 execute(map) :- drawMap(1,1,Timer), nl, !.
@@ -19,16 +23,15 @@ execute(drop(object)) :- drop(object), nl, !.
 execute(use(object)) :- use(object), nl, !.
 execute(attack) :- help, nl, !.
 execute(status) :- status, nl, !.
-execute(quit) :- quit, nl, !.
 /*execute(save(file)) :- save(file), nl, !.
 execute(load(file)) :- load(file), nl, !. */
 execute(_) :- write('Invalid command. Please try again.'), nl.
 
 /* Syarat game beres */
-win :- enemy_count == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
+win :- enemy_count(X), X == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
 lose :- health == 0, writeln('Your health reaches 0. No Chicken dinner for you!'), !.
-lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.
-quit :- write('Alice scheme is successful. You have been killed.'), retractall(location(X,Y)), retractall(inventory(X)), sleep(2), nl, nl, !, credit.
+/*lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.*/
+quit :- retractall(location(X,Y)), retractall(inventory(X)), nl, nl, !, credit.
 
 /* Deklarasi Fakta */
 location(2,2,5,5,openField).
@@ -43,15 +46,19 @@ location(5,6,11,7,mountain).
 /* weapon(X,Y) : Senjata X dapat menampung Y peluru*/
 weapon(m16,30).
 weapon(rpg7,2).
+
 /* armor(X,Y) : Armor X memiliki Y endurance */
 armor(lvl1,30).
 armor(lvl2,60).
+
 /* ammo(X,Y) : Senjata X menggunakan ammo Y */
 ammo(m16,rifleammo).
 ammo(rpg7,rocket).
+
 /* aidkit(X,Y) : Aidkit X menambah Y health */
 aidkit(drink,20).
 aidkit(bandage,50).
+
 /* item(X,Y) : Item Y bertipe X */
 type(weapon,[m16,rpg7]).
 type(armor,[jacket,vest]).
@@ -68,14 +75,93 @@ type(aidkit,bandage).
 :- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
 :- dynamic(drawMap/3).
+:- dynamic(enemy_count/1).
+:- dynamic(timer/1).
 
 /* Deklarasi Rule */
 dynamic_facts :-
-retractall(player_location(X,Y)), retractall(player_health(X)), retractall(player_armor(X)), retractall(player_weapon(X)), retractall(player_ammo(X)), retractall(inventory(X)),
-random(2,11,X), random(2,11,Y), assertz(player_location(X,Y)), assertz(player_health(100)), assertz(player_armor(0)), assertz(player_weapon(none)), assertz(player_ammo(0)), assertz(inventory(none)).
+retractall(player_location(X,Y)),
+retractall(player_health(X)),
+retractall(player_armor(X)),
+retractall(player_weapon(X)),
+retractall(player_ammo(X)),
+retractall(inventory(X)),
+retractall(enemy_count(X)),
+retractall(timer(X)).
+
+/* Fakta untuk kondisi awal */
+player_health(X).
+player_armor(X).
+player_ammo(X).
+player_location(X,Y).
+enemy_count(X).
+timer(X).
+
+/* Inisialisasi Game */
+initialize_game :-
+assertz(player_health(100)),
+assertz(player_armor(0)),
+random(10,20,Z),
+assertz(enemy_count(Z)),
+random(2,11,X),
+random(2,11,Y),
+assertz(player_location(X,Y)),
+assertz(player_weapon(none)),
+assertz(inventory(none)),
+assertz(timer(0)).
+
+/*-------Debugging----------*/
+print_health :-
+player_health(X),
+write(X), nl.
+
+print_armor :-
+player_armor(X),
+write(X), nl.
+
+print_location :-
+(player_location(X,Y), write(X), write(' '), write(Y), nl, X >= 5, X =< 6, Y >= 5, Y =< 6, write('You are in the karnak temple. to the north is an open field. to the east is an open field. to the west is the lost city of iram. to the south is the cueva del diablo.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 2, Y =< 4, write('You are in the open field. to the north is a dead zone. to the east is a desert. to the west is a dead zone. to the south is a jungle.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 2, Y =< 4, write('You are in the open field. to the north is a dead zone. to the east is a desert. to the west is a dead zone. to the south is the karnak temple.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 5, Y =< 6, write('You are in the open field. to the north is a dead zone. to the east is the karnak temple. to the west is a dead zone. to the south is a jungle.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 5, Y =< 6, write('You are in the lost city of iram. to the north is a desert. to the east is a desert. to the west is the karnak temple. to the south is the milta temple.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 2, Y =< 4, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is an open field. to the south is a mountain.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 2, Y =< 4, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is an open field. to the south is the lost city of iram.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 5, Y =< 6, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is the lost city of iram. to the south is a mountain.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 7, Y =< 8, write('You are in the cueva del diablo. to the north is the karnak temple. to the east is the milta temple. to the west is a jungle. to the south is a jungle.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 9, Y =< 11, write('You are in the jungle. to the north is an open field. to the east is a mountain. to the west is a dead zone. to the south is a deadzone.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 7, Y =< 8, write('You are in the jungle. to the north is an open field. to the east is the cueva del diablo. to the west is a dead zone. to the south is a deadzone.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 9, Y =< 11, write('You are in the jungle. to the north is the cueva del diablo. to the east is a mountain. to the west is a dead zone. to the south is a deadzone.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 7, Y =< 8, write('You are in the milta temple. to the north is the lost city of iram. to the east is a mountain. to the west is the cueva del diablo. to the south is a mountain.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 9, Y =< 11, write('You are in the mountain. to the north is a desert. to the east is a dead zone. to the west is a jungle. to the south is a dead zone.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 7, Y =< 8, write('You are in the mountain. to the north is a desert. to the east is a dead zone. to the west is the milta temple. to the south is a dead zone.'), nl, !);
+(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 9, Y =< 11, write('You are in the mountain. to the north is the milta temple. to the east is a dead zone. to the west is a jungle. to the south is a dead zone.'), nl, !).
+
+
+print_enemy_count :-
+enemy_count(X),
+write(X), nl.
+
+half :-
+player_health(X),
+Y is div(X,2),
+retractall(player_health(X)),
+assertz(player_health(Y)).
+
+/*--------------------*/
 
 /* Loop agar game tetap berjalan */
-game() :- repeat, read(X), execute(X), (win; lose; X==quit), !.
+game :-
+repeat,
+timer(Y),
+drawMap(1,1,Y),
+nl,
+write(' << Command >> '),
+read(X),
+execute(X),
+retractall(timer(Y)),
+assertz(timer(Y+1)),
+(win; /*lose;*/ X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
@@ -88,12 +174,23 @@ write(' |_|      \\____/ |____/  \\_____||_| \\___| \\__, | \\___||_| |_| \\__ _
 write('                                           __/ |                          '), nl,
 write('                                          |___/                           '), nl,
 write(' Welcome to PUBG Legends! '), nl,
-write(' Five seconds before the enemy reaches the battlefield! Smash them! '), nl,
-sleep(1), write(' No troops deployed! '), nl,
-sleep(2), write(' You`re alone... '), dynamic_facts, game().
+write(' To see all the command, type help'), nl,
+write(' Deploying in T-5 second '), nl,
+write(' 5...'), nl,
+sleep(1), write(' 4...'), nl,
+sleep(1), write(' 3...'), nl,
+sleep(1), write(' 2...'), nl,
+sleep(1), write(' 1...'), nl,
+sleep(1), write(' Deploying and opening parachute '), nl,
+sleep(1), write(' You landed safely. Kill all enemies '), nl, nl,
+sleep(2),
+dynamic_facts,
+initialize_game,
+game.
 
 /* help() : menampilkan fungsi-fungsi yang dapat dipanggil dalam permainan, dapat mengandung informasi lain yang mungkin dibutuhkan */
 help :-
+nl,
 write(' start -- start the game! '), nl,
 write(' help -- show available commands '), nl,
 write(' quit -- quit the game '), nl,
@@ -118,7 +215,8 @@ write(' O = ammo  '), nl,
 write(' P = player  '), nl,
 write(' E = enemy  '), nl,
 write(' - = accessible  '), nl,
-write(' X = inaccessible ').
+write(' X = inaccessible '),
+sleep(5).
 
 /* credit() : tampilan credit */
 credit :-
@@ -140,22 +238,22 @@ sleep(2), halt.
 
 /* look() : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
 
-
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-n :- retractall(player_location(X,Y), Z is Y + 1, assertz(player_location(X,Z).
+e :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-s :- retractall(player_location(X,Y), Z is Y - 1, assertz(player_location(X,Z).
+w :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-e :- retractall(player_location(X,Y), Z is X + 1, assertz(player_location(Z,Y).
+s :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
-w :- retractall(player_location(X,Y), Z is X - 1, assertz(player_location(Z,Y).
+n :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
 
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12,Timer) :- print('X'), nl, !.
-drawMap(Row,Col,Timer) :- 
+drawMap(Row,Col,Timer) :-
+  (player_location(X,Y), Row == X, Col == Y, Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
@@ -165,9 +263,12 @@ drawMap(Row,Col,Timer) :-
   (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
 (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!).
 
+/* deadzone_hit: mengecek apakah player berada di deadzone */
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
-write(' Health    : '), write(health), nl,
-write(' Armor     : '), write(armor), nl,
-write(' Weapon    : '), write(current_weapon), nl,
-write(' Inventory : '), write(inventory).
+write(' Health    : '), print_health,
+write(' Armor     : '), print_armor,
+write(' Weapon    : '), write(player_weapon), nl,
+write(' Inventory : '), write(inventory), nl,
+write(' Enemy left: '), print_enemy_count,
+sleep(3).
