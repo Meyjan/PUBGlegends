@@ -1,9 +1,9 @@
-/* Nama Kelompok	: Fortine > PUBG */
-/* NIM/Nama			: 13517020/T. Antra Oksidian Tafly, 13517059/Nixon Andhika, 13517131/Jan Meyer Saragih, 13517137/Vincent Budianto */
-/* Nama file		: BattleRoyale.pl */
-/* Topik			: Tugas Besar IF2121 - Logika Informatika */
-/* Tanggal			: 21 November 2018 */
-/* Deskripsi		: Membuat permainan battle royale menggunakan prolog */
+/* Nama Kelompok	: Fortnite > PUBG */
+/* NIM/Nama			  : 13517020/T. Antra Oksidian Tafly, 13517059/Nixon Andhika, 13517131/Jan Meyer Saragih, 13517137/Vincent Budianto */
+/* Nama file		  : BattleRoyale.pl */
+/* Topik			    : Tugas Besar IF2121 - Logika Informatika */
+/* Tanggal			  : 21 November 2018 */
+/* Deskripsi		  : Membuat permainan battle royale menggunakan prolog */
 
 /* Implementasi fungsi execute */
 execute(help) :- help, nl, !.
@@ -11,9 +11,10 @@ execute(half):- half,!.
 execute(print_health):- print_health, !.
 execute(print_location):- print_location, !.
 execute(print_armor):- print_armor, !.
+execute(deadzone_hit) :- deadzone_hit, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
-execute(map) :- drawMap(1,1,Timer), nl, !.
+execute(map) :- drawMap(1,1), nl, !.
 execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
@@ -29,8 +30,9 @@ execute(_) :- write('Invalid command. Please try again.'), nl.
 
 /* Syarat game beres */
 win :- enemy_count(X), X == 0, writeln('Congratulations, Winner Winner Chicken Dinner!'), quit, !.
-lose :- health == 0, writeln('Your health reaches 0. No Chicken dinner for you!'), !.
-/*lose :- deadzone_hit, writeln('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), !.*/
+lose :-
+(health == 0, write('Your health reaches 0. No Chicken dinner for you!'), nl, !);
+(deadzone_hit, write('You are in the deadzone. You died pitifully. No Chicken dinner for you!'), nl, !).
 quit :- retractall(location(X,Y)), retractall(inventory(X)), nl, nl, !, credit.
 
 /* Deklarasi Fakta */
@@ -74,7 +76,7 @@ type(aidkit,bandage).
 :- dynamic(player_weapon/1).
 :- dynamic(player_ammo/1).
 :- dynamic(inventory/1).
-:- dynamic(drawMap/3).
+:- dynamic(drawMap/2).
 :- dynamic(enemy_count/1).
 :- dynamic(timer/1).
 
@@ -115,28 +117,31 @@ print_health :-
 player_health(X),
 write(X), nl.
 
+print_timer :-
+timer(X),
+write(X), nl.
+
 print_armor :-
 player_armor(X),
 write(X), nl.
 
 print_location :-
-(player_location(X,Y), write(X), write(' '), write(Y), nl, X >= 5, X =< 6, Y >= 5, Y =< 6, write('You are in the karnak temple. to the north is an open field. to the east is an open field. to the west is the lost city of iram. to the south is the cueva del diablo.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 2, Y =< 4, write('You are in the open field. to the north is a dead zone. to the east is a desert. to the west is a dead zone. to the south is a jungle.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 2, Y =< 4, write('You are in the open field. to the north is a dead zone. to the east is a desert. to the west is a dead zone. to the south is the karnak temple.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 5, Y =< 6, write('You are in the open field. to the north is a dead zone. to the east is the karnak temple. to the west is a dead zone. to the south is a jungle.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 5, Y =< 6, write('You are in the lost city of iram. to the north is a desert. to the east is a desert. to the west is the karnak temple. to the south is the milta temple.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 2, Y =< 4, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is an open field. to the south is a mountain.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 2, Y =< 4, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is an open field. to the south is the lost city of iram.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 5, Y =< 6, write('You are in a desert. to the north is a dead zone. to the east is a dead zone. to the west is the lost city of iram. to the south is a mountain.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 7, Y =< 8, write('You are in the cueva del diablo. to the north is the karnak temple. to the east is the milta temple. to the west is a jungle. to the south is a jungle.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 9, Y =< 11, write('You are in the jungle. to the north is an open field. to the east is a mountain. to the west is a dead zone. to the south is a deadzone.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 2, X =< 4, Y >= 7, Y =< 8, write('You are in the jungle. to the north is an open field. to the east is the cueva del diablo. to the west is a dead zone. to the south is a deadzone.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 5, X =< 6, Y >= 9, Y =< 11, write('You are in the jungle. to the north is the cueva del diablo. to the east is a mountain. to the west is a dead zone. to the south is a deadzone.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 7, Y =< 8, write('You are in the milta temple. to the north is the lost city of iram. to the east is a mountain. to the west is the cueva del diablo. to the south is a mountain.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 9, Y =< 11, write('You are in the mountain. to the north is a desert. to the east is a dead zone. to the west is a jungle. to the south is a dead zone.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 9, X =< 11, Y >= 7, Y =< 8, write('You are in the mountain. to the north is a desert. to the east is a dead zone. to the west is the milta temple. to the south is a dead zone.'), nl, !);
-(player_location(X,Y), write(X), write(' '), write(Y), nl,  X >= 7, X =< 8, Y >= 9, Y =< 11, write('You are in the mountain. to the north is the milta temple. to the east is a dead zone. to the west is a jungle. to the south is a dead zone.'), nl, !).
-
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 5, Y =< 6, write(X), write(' '), write(Y), nl, write('You are in the karnak temple.\nTo the north is an open field.\nTo the east is an open field.\nTo the west is the lost city of iram.\nTo the south is the cueva del diablo.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 2, X =< 4, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in the open field.\nTo the north is a dead zone.\nTo the east is a desert.\nTo the west is a dead zone.\nTo the south is a jungle.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in the open field.\nTo the north is a dead zone.\nTo the east is a desert.\nTo the west is a dead zone.\nTo the south is the karnak temple.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 2, X =< 4, Y >= 5, Y =< 6, write(X), write(' '), write(Y), nl, write('You are in the open field.\nTo the north is a dead zone.\nTo the east is the karnak temple.\nTo the west is a dead zone.\nTo the south is a jungle.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 9, X =< 11, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in a desert.\nTo the north is a dead zone.\nTo the east is a dead zone.\nTo the west is an open field.\nTo the south is a mountain.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 7, X =< 8, Y >= 5, Y =< 6, write(X), write(' '), write(Y), nl, write('You are in the lost city of iram.\nTo the north is a desert.To the east is a desert.To the west is the karnak temple.To the south is the milta temple.'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 7, X =< 8, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in a desert.\nTo the north is a dead zone.\nTo the east is a dead zone.\nTo the west is an open field.\nTo the south is the lost city of iram.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 9, X =< 11, Y >= 5, Y =< 6, write(X), write(' '), write(Y), nl, write('You are in a desert.\nTo the north is a dead zone.\nTo the east is a dead zone.\nTo the west is the lost city of iram.\nTo the south is a mountain.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 7, Y =< 8, write(X), write(' '), write(Y), nl, write('You are in the cueva del diablo.\nTo the north is the karnak temple.\nTo the east is the milta temple.\nTo the west is a jungle.\nTo the south is a jungle.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 2, X =< 4, Y >= 9, Y =< 11, write(X), write(' '), write(Y), nl, write('You are in the jungle.\nTo the north is an open field.\nTo the east is a mountain.\nTo the west is a dead zone.\nTo the south is a deadzone.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 2, X =< 4, Y >= 7, Y =< 8, write(X), write(' '), write(Y), nl, write('You are in the jungle.\nTo the north is an open field.\nTo the east is the cueva del diablo.\nTo the west is a dead zone.\nTo the south is a deadzone.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 9, Y =< 11, write(X), write(' '), write(Y), nl, write('You are in the jungle.\nTo the north is the cueva del diablo.\nTo the east is a mountain.\nTo the west is a dead zone.\nTo the south is a deadzone.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 7, X =< 8, Y >= 7, Y =< 8, write(X), write(' '), write(Y), nl, write('You are in the milta temple.\nTo the north is the lost city of iram.\nTo the east is a mountain.\nTo the west is the cueva del diablo.\nTo the south is a mountain.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 9, X =< 11, Y >= 9, Y =< 11, write(X), write(' '), write(Y), nl, write('You are in the mountain.\nTo the north is a desert.\nTo the east is a dead zone.\nTo the west is a jungle.\nTo the south is a dead zone.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 9, X =< 11, Y >= 7, Y =< 8, write(X), write(' '), write(Y), nl, write('You are in the mountain.\nTo the north is a desert.\nTo the east is a dead zone.\nTo the west is the milta temple.\nTo the south is a dead zone.\n'), nl, !);
+(player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 7, X =< 8, Y >= 9, Y =< 11, write(X), write(' '), write(Y), nl, write('You are in the mountain.\nTo the north is the milta temple.\nTo the east is a dead zone.\nTo the west is a jungle.\nTo the south is a dead zone.\n'), nl, !).
 
 print_enemy_count :-
 enemy_count(X),
@@ -161,7 +166,7 @@ read(X),
 execute(X),
 retractall(timer(Y)),
 assertz(timer(Y+1)),
-(win; /*lose;*/ X==quit), !.
+(win; lose; X==quit), !.
 
 /* start() : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
@@ -239,31 +244,48 @@ sleep(2), halt.
 /* look() : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
 
 /* n() : menggerakkan pemain satu petak ke arah utara  */
-e :- player_location(X,Y), Z is Y + 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+n :-
+(player_location(X,Y), factor(Min,Max), Z is Y - 1, Z =< Min, write('Invalid move'), !);
+(player_location(X,Y), factor(Min,Max), Z is Y - 1, Z > Min, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location, !).
 
 /* s() : menggerakkan pemain satu petak ke arah selatan */
-w :- player_location(X,Y), Z is Y - 1, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location.
+s :-
+(player_location(X,Y), factor(Min,Max), Z is Y + 1, Z >= Max, write('Invalid move'), !);
+(player_location(X,Y), factor(Min,Max), Z is Y + 1, Z < Max, retractall(player_location(X,Y)), assertz(player_location(X,Z)), write('Posisi = '), print_location, !).
 
 /* e() : menggerakkan pemain satu petak ke arah timur */
-s :- player_location(X,Y), Z is X + 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+e :-
+(player_location(X,Y), factor(Min,Max), Z is X + 1, Z >= Max, write('Invalid move'), !);
+(player_location(X,Y), factor(Min,Max), Z is X + 1, Z < Max, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location, !).
 
 /* w() : menggerakkan pemain satu petak ke arah barat */
-n :- player_location(X,Y), Z is X - 1, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location.
+w :-
+(player_location(X,Y), factor(Min,Max), Z is X - 1, Z =< Min, write('Invalid move'));
+(player_location(X,Y), factor(Min,Max), Z is X - 1, Z > Min, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location).
 
 /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12,Timer) :- print('X'), nl, !.
 drawMap(Row,Col,Timer) :-
-  (player_location(X,Y), Row == X, Col == Y, Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer), !);
-  (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
+(player_location(X,Y), Row == Y, Col == X, Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer), !);
+(Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
 (Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!).
 
+/* faktor untuk penentu X saat timer dijalankan */
+factor(Min,Max) :- (timer(Timer), Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor)).
+
 /* deadzone_hit: mengecek apakah player berada di deadzone */
+deadzone_hit :-
+(player_location(X, Y), factor(Min, Max), X =< Min,!);
+(player_location(X, Y), factor(Min, Max), X >= Max,!);
+(player_location(X, Y), factor(Min, Max), Y >= Max,!);
+(player_location(X, Y), factor(Min, Max), Y =< Min,!).
+
 /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
 write(' Health    : '), print_health,
