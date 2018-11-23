@@ -14,7 +14,7 @@ execute(print_armor):- print_armor, !.
 execute(deadzone_hit) :- deadzone_hit, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
-execute(map) :- drawMap(1,1), nl, !.
+execute(map) :- timer(Y),drawMap(1,1,Y), nl, !.
 execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
@@ -161,6 +161,7 @@ timer(Y),
 drawMap(1,1,Y),
 nl,
 write(' << Command >> '),
+nl,
 read(X),
 execute(X),
 retractall(timer(Y)),
@@ -296,9 +297,10 @@ assertz(player_health(Y)).
 game :-
 repeat,
 increasetimer,
-drawMap(1,1),
-nl,
+/*drawMap(1,1),
+nl,*/
 write(' << Command >> '),
+nl
 read(X),
 execute(X),
 retractall(timer(Y)),
