@@ -61,12 +61,24 @@ aidkit(drink,20).
 aidkit(bandage,50).
 
  /* item(X,Y) : Item Y bertipe X */
-type(weapon,[m16,rpg7]).
-type(armor,[jacket,vest]).
+type(weapon,m16).
+type(weapon,rpg7).
+type(armor,jacket).
+type(armor,vest).
 type(ammo,rifleammo).
 type(ammo,rocket).
 type(aidkit,drink).
 type(aidkit,bandage).
+
+ /* ID(X,Y) : Item X ber-ID Y */
+ iD(m16,1).
+ iD(rpg7,2).
+ iD(jacket,3).
+ iD(vest,4).
+ iD(rifleammo,5).
+ iD(rocket,6).
+ iD(drink,7).
+ iD(bandage,8).
 
  /* Variabel Dinamik */
 :- dynamic(player_location/2).
@@ -74,6 +86,8 @@ type(aidkit,bandage).
 :- dynamic(player_armor/1).
 :- dynamic(player_weapon/1).
 :- dynamic(player_ammo/1).
+:- dynamic(item_location/3).
+:- dynamic(item_list/1).
 :- dynamic(inventory/1).
 :- dynamic(drawMap/2).
 :- dynamic(enemy_count/1).
@@ -87,6 +101,8 @@ retractall(player_armor(_X)),
 retractall(player_weapon(_X)),
 retractall(player_ammo(_X)),
 retractall(inventory([_A, _B, _C, _D, _E])),
+retractall(item_location(_ID,_X,_Y)),
+retractall(item_list([_H|_T])),
 retractall(enemy_count(_X)),
 retractall(timer(_X)).
 
@@ -99,6 +115,8 @@ player_weapon(_X).
 enemy_count(_X).
 timer(_X).
 inventory([_A, _B, _C, _D, _E]).
+item_list([_H|_T]).
+item_location(_ID,_X,_Y).
 
  /* Inisialisasi Game */
 initialize_game :-
@@ -111,7 +129,8 @@ random(2,11,Y),
 assertz(player_location(X,Y)),
 assertz(player_weapon(0)),
 assertz(inventory([0, 0, 0, 0, 0])),
-assertz(timer(0)).
+assertz(timer(0)),
+assertz(item_list([])).
 
  /*-------Debugging----------*/
 print_health :-
@@ -127,6 +146,7 @@ player_armor(X),
 write(X), nl.
 
 print_location :-
+lookItem,
 (player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 5, Y =< 6, write(X), write(' '), write(Y), nl, write('You are in the karnak temple.\nTo the north is an open field.\nTo the east is an open field.\nTo the west is the lost city of iram.\nTo the south is the cueva del diablo.\n'), nl, !);
 (player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 2, X =< 4, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in the open field.\nTo the north is a dead zone.\nTo the east is a desert.\nTo the west is a dead zone.\nTo the south is a jungle.\n'), nl, !);
 (player_location(X,Y), factor(Min,Max), X > Min, X < Max, Y > Min, Y < Max, X >= 5, X =< 6, Y >= 2, Y =< 4, write(X), write(' '), write(Y), nl, write('You are in the open field.\nTo the north is a dead zone.\nTo the east is a desert.\nTo the west is a dead zone.\nTo the south is the karnak temple.\n'), nl, !);
@@ -165,13 +185,38 @@ enemy_count(X),
 Y is div(X,2),
 retractall(enemy_count(X)),
 assertz(enemy_count(Y)).
+
+addItem :-
+random(1,10,A),
+!,
+((A\=5,!);
+(A==5,random(1,8,B),iD(N,B),factor(Min,Max),random(Min,Max,X),random(Min,Max,Y),item_list(C),retractall(item_list(C)),assertz(item_list([[N,X,Y]|C])))).
+
+same([], []).
+same([H1|R1], [H2|R2]):-
+    H1 = H2,
+    same(R1, R2).
+
+checkItem(A,[]) :-
+  !,fail.
+checkItem(A,[HB|TB]):-
+  (same(A,HB));
+  (checkItem(A,TB)).
+
+lookItem :- player_location(X,Y), item_list(B), (checkItem([N,X,Y],B),write('Terdapat sebuah'),write(N),nl);(true).
+
+
  /*--------------------*/
 
  /* Loop agar game tetap berjalan */
 game :-
 repeat,
 timer(Y),
-drawMap(1,1,Y),
+addItem,
+item_list(A),
+write(A),
+nl,
+drawMap(1,1),
 nl,
 write(' << Command >> '),
 read(X),
@@ -276,18 +321,18 @@ w :-
 (player_location(X,Y), factor(Min,Max), Z is X - 1, Z =< Min, write('Invalid move'));
 (player_location(X,Y), factor(Min,Max), Z is X - 1, Z > Min, retractall(player_location(X,Y)), assertz(player_location(Z,Y)), write('Posisi = '), print_location).
 
- /* drawMap(X,Y,Z) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
+ /* drawMap(X,Y) : memperlihatkan seluruh peta permainan dengan menunjukkan petak deadzone dan petak safezone, serta lokasi pemain */
 drawMap(12,12) :- print('X'), nl, !.
 drawMap(Row,Col) :-
-(player_location(X,Y), Row == Y, Col == X, factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-(factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-(factor(Min,Max), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-(factor(Min,Max), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
-(factor(Min,Max), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!);
-(factor(Min,Max), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer),!);
-(factor(Min,Max), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol,Timer), !);
-(factor(Min,Max), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol,Timer),!);
-(factor(Min,Max), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol,Timer),!).
+(player_location(X,Y), Row == Y, Col == X, factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('P '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row > Min, Col > Min, Row < Max, Col < Max, print('- '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row =< Min, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row =< Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol),!);
+(factor(Min,Max), Row =< Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row >= Max, Col < Max, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol),!);
+(factor(Min,Max), Row > Min, Col =< Min, print('X '), !, NextCol is Col+1, drawMap(Row,NextCol), !);
+(factor(Min,Max), Row > Min, Col >= 12, print('X'), nl, !, NextRow is Row+1, NextCol is 1, drawMap(NextRow,NextCol),!);
+(factor(Min,Max), Row > Min, Col >= Max, Col < 12, print('X '), !, NextCol is Col + 1, drawMap(Row,NextCol),!).
 
  /* faktor untuk penentu X saat timer dijalankan */
 factor(Min,Max) :- (timer(Timer), Factor is (Timer div 10), Min is (1 + Factor), Max is (12 - Factor)).
