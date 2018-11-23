@@ -18,9 +18,9 @@ execute(n) :- n, nl, !.
 execute(s) :- s, nl, !.
 execute(e) :- e, nl, !.
 execute(w) :- w, nl, !.
-execute(take(object)) :- take(object), nl, !.
-execute(drop(object)) :- drop(object), nl, !.
-execute(use(object)) :- use(object), nl, !.
+execute(take(Object)) :- take(Object), !, nl, !.
+execute(drop(Object)) :- drop(Object), nl, !.
+execute(use(Object)) :- use(Object), nl, !.
 execute(attack) :- help, nl, !.
 execute(status) :- status, nl, !.
 /*execute(save(file)) :- save(file), nl, !.
@@ -95,7 +95,7 @@ player_health(_X).
 player_armor(_X).
 player_ammo(_X).
 player_location(_X,_Y).
-player_weapon(_X),
+player_weapon(_X).
 enemy_count(_X).
 timer(_X).
 inventory([_A, _B, _C, _D, _E]).
@@ -149,8 +149,13 @@ enemy_count(X),
 write(X), nl.
 
 print_inventory([]).
+print_inventory([Head | _Rest]) :- Head == 0, inventory(X), banyak_isi_inventory(X, N), N > 0, !.
 print_inventory([Head | _Rest]) :- Head == 0, write('Your inventory is empty!'), !.
 print_inventory([Head | Rest]) :- write(Head), write(' '), print_inventory(Rest).
+
+banyak_isi_inventory([], N) :- N is 0.
+banyak_isi_inventory([Head | _Rest], N) :- Head == 0, N is 0, !.
+banyak_isi_inventory([_Head | Rest], N) :- banyak_isi_inventory(Rest, M), N is M + 1.
 
 print_weapon :- player_weapon(X), X == 0, write('none').
 print_weapon :- player_weapon(X), write(X).
@@ -293,10 +298,72 @@ deadzone_hit :-
 (player_location(X, Y), factor(Min, Max), Y >= Max,!);
 (player_location(X, Y), factor(Min, Max), Y =< Min,!).
 
+/* take(X) : mengambil barang jika inventory tidak penuh dan X valid */
+take(X) :-
+inventory(Y),
+banyak_isi_inventory(Y, N),
+N == 0,
+retractall(inventory(Y)),
+assertz(inventory([X,0,0,0,0])),
+write('You took '),
+write(X).
+
+take(X) :-
+inventory(Y),
+banyak_isi_inventory(Y, N),
+N == 1,
+inventory([A,0,0,0,0]),
+B = A,
+retractall(inventory(Y)),
+assertz(inventory([B,X,0,0,0])),
+write('You took '),
+write(X).
+
+take(X) :-
+inventory(Y),
+banyak_isi_inventory(Y, N),
+N == 2,
+inventory([A,B,0,0,0]),
+C = A,
+D = B,
+retractall(inventory(Y)),
+assertz(inventory([C,D,X,0,0])),
+write('You took '),
+write(X).
+
+take(X) :-
+inventory(Y),
+banyak_isi_inventory(Y, N),
+N == 3,
+inventory([A,B,C,0,0]),
+D = A,
+E = B,
+F = C,
+retractall(inventory(Y)),
+assertz(inventory([D,E,F,X,0])),
+write('You took '),
+write(X).
+
+take(X) :-
+inventory(Y),
+banyak_isi_inventory(Y, N),
+N == 4,
+inventory([A,B,C,D,0]),
+E = A,
+F = B,
+G = C,
+H = D,
+retractall(inventory(Y)),
+assertz(inventory([E,F,G,H,X])),
+write('You took '),
+write(X).
+
+take(_X) :- inventory(Y), banyak_isi_inventory(Y, N), N == 5, write('Inventory penuh!').
+
  /* status() : menampilkan status pemain saat ini (health, armor, weapon, ammo) dan list barang yang ada di inventory */
 status :-
 write(' Health    : '), print_health,
 write(' Armor     : '), print_armor,
 write(' Weapon    : '), print_weapon, nl,
-write(' Inventory : '), inventory(X), print_inventory(X), !, nl,
+write(' Inventory : '), inventory(X), print_inventory(X), nl,
 write(' Enemy left: '), print_enemy_count.
