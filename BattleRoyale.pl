@@ -24,7 +24,7 @@ execute(drop(Object)) :- drop(Object), nl, !.
 execute(use(Object)) :- use(Object), nl, !.
 execute(attack) :- help, nl, !.
 execute(status) :- status, nl, !.
-/*execute(save(file)) :- save(file), nl, !.
+execute(save(File)) :- save(File), nl, !.
 execute(load(file)) :- load(file), nl, !. */
 execute(_) :- write('Invalid command. Please try again.'), nl.
 
@@ -125,6 +125,7 @@ item_location(_ID,_X,_Y).
 initialize_game :-
 assertz(player_health(100)),
 assertz(player_armor(0)),
+assertz(player_ammo(0)),
 random(10,20,Z),
 assertz(enemy_count(Z)),
 random(2,11,X),
@@ -153,16 +154,19 @@ repeat,
 timer(Y),
 addItem,
 enemy_list(B),
-print(B),
+write(' Enemy : '), print(B),
 nl,
 item_list(A),
-print(A),
-nl,
+write(' Item  : '), print(A),
+player_location(G,H), nl,
+write(' Location : '), write(G), write(','), write(H),
+nl, nl,
 drawMap(1,1),
 nl,
 write(' Deadzone approaching in '), Z is 10 - (Y mod 10), write(Z), write(' move'),
 nl,
 enemymove,
+enemyDeadzone,
 nl,
 write(' << Command >> '),
 read(X),
@@ -172,7 +176,7 @@ retractall(timer(Y)),
 assertz(timer(Y1)),
 (win; lose; X==quit), !.
 
-/* start() : memulai permainan, menampilkan judul dan instruksi permainan */
+/* start : memulai permainan, menampilkan judul dan instruksi permainan */
 start :-
 write('  _____   _    _  ____    _____  _                                _       '), nl,
 write(' |  __ \\ | |  | ||  _ \\  / ____|| |                              | |      '), nl,
@@ -197,7 +201,7 @@ dynamic_facts,
 initialize_game,
 game.
 
-/* help() : menampilkan fungsi-fungsi yang dapat dipanggil dalam permainan, dapat mengandung informasi lain yang mungkin dibutuhkan */
+/* help : menampilkan fungsi-fungsi yang dapat dipanggil dalam permainan, dapat mengandung informasi lain yang mungkin dibutuhkan */
 help :-
 nl,
 write(' start.            --   start the game! '), nl,
@@ -227,7 +231,7 @@ write(' - = accessible  '), nl,
 write(' X = inaccessible '),
 sleep(5).
 
-/* credit() : tampilan credit */
+/* credit : tampilan credit */
 credit :-
 write('  _______  _    _            _   _  _  __  __     __ ____   _    _  '), nl,
 write(' |__   __|| |  | |    /\\    | \\ | || |/ /  \\ \\   / // __ \\ | |  | | '), nl,
@@ -245,8 +249,137 @@ write('                    13517131 - Jan Meyer Saragih                    '), n
 write('                    13517137 - Vincent Budianto                     '), nl,
 sleep(2), halt.
 
-/* look() : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
-look :- lookItem.
+/* look : menuliskan petak-petak 3x3 di sekitar pemain dengan posisi pemain saat ini menjadi center */
+look :- lookItem, lookEnemy, print9.
+
+/* save(File) : menyimpan data ke File */
+save(File) :- atom_concat(File,'.txt',S),open(S,write,ID),
+    player_location(X,Y),write(ID,X), write('Testfail1\n'), nl(ID), write(ID,Y), nl(ID),
+    player_health(Hp),write(ID,Hp), nl(ID),
+    player_armor(Ar),write(ID,Ar), nl(ID),
+    player_weapon(Wea), write(ID,Wea), nl(ID),
+    player_ammo(Amm), write(ID,Amm), nl(ID),
+    item_list(Il), write(ID,Il), nl(ID),
+    enemy_list(El), write(ID,El), nl(ID),
+    inventory(Inv), write(ID,Inv), nl(ID),
+    enemy_count(Ec), write(ID,Ec), nl(ID),
+    close(ID).
+
+/* lookEnemy : menuliskan nama item pada posisi player */
+lookEnemy :-
+player_location(X,Y), enemy_list(B), ((checkEnemy([_Id,_N,X,Y],B),write(' There is '), print_enemy(X,Y));(true)),
+A is Y - 1, ((checkEnemy([_E1,_E2,X,A],B),write(' To the north there is '), print_enemy(X,A));(true)),
+B1 is X + 1, C is Y - 1, ((checkEnemy([_E3,_E4,B1,C],B),write(' To the north east there is '), print_enemy(B1,C));(true)),
+D is X + 1, ((checkEnemy([_E5,_E6,D,Y],B),write(' To the east there is '), print_enemy(D,Y));(true)),
+F is X + 1, E is Y + 1,((checkEnemy([_E7,_E8,F,E],B),write(' To the south east there is '), print_enemy(F,E));(true)),
+G is Y + 1, ((checkEnemy([_E9,_E10,X,G],B),write(' To the south there is '), print_enemy(X,G));(true)),
+H is X - 1, I is Y + 1, ((checkEnemy([_E11,_E12,H,I],B),write(' To the south west there is '), print_enemy(H,I));(true)),
+J is X - 1, ((checkEnemy([_E13,_E14,J,Y],B),write(' To the west there is '), print_enemy(J,Y));(true)),
+K is X - 1, L is Y - 1, ((checkEnemy([_E15,_E16,K,L],B),write(' To the north west there is '), print_enemy(K,L));(true)).
+
+/* checkEnemy(X,[Y]) : menghasilkan true jika list X ada di list of list [Y] */
+checkEnemy(_A,[]) :- !, fail.
+checkEnemy(A,[HB|TB]) :-
+((same(A,HB));
+(checkEnemy(A,TB))).
+
+/* print_enemy(X,Y) : menuliskan nama enemy yang ada di posisi (X,Y) */
+print_enemy(X,Y) :-
+enemy_list(B),
+((\+checkEnemy([Id,N,X,Y],B), write('Nothing '), nl, !);
+(checkEnemy([Id,N,X,Y],B), write('an '), write('Enemy!!'), nl, !)).
+
+/* lookItem : menuliskan nama item pada posisi player */
+lookItem :-
+player_location(X,Y), item_list(B1), ((checkItem([_N,X,Y],B1),write(' You found '), print_item(X,Y));(true)),
+A is Y - 1, ((checkItem([_N1,X,A],B1),write(' To the north there is '), print_item(X,A));(true)),
+B is X + 1, C is Y - 1, ((checkItem([_N2,B,C],B1),write(' To the north east there is '), print_item(B,C));(true)),
+D is X + 1, ((checkItem([_N3,D,Y],B1),write(' To the east there is '), print_item(D,Y));(true)),
+F is X + 1, E is Y + 1,((checkItem([_N4,F,E],B1),write(' To the south east there is '), print_item(F,E));(true)),
+G is Y + 1, ((checkItem([_N5,X,G],B1),write(' To the south there is '), print_item(X,G));(true)),
+H is X - 1, I is Y + 1, ((checkItem([_N6,H,I],B1),write(' To the south west there is '), print_item(H,I));(true)),
+J is X - 1, ((checkItem([_N7,J,Y],B1),write(' To the west there is '), print_item(J,Y));(true)),
+K is X - 1, L is Y - 1, ((checkItem([_N8,K,L],B1),write(' To the north west there is '), print_item(K,L));(true)).
+
+
+/* print_item(X,Y) : menuliskan nama item yang ada di posisi (X,Y) */
+print_item(X,Y) :-
+item_list(B),
+((\+checkItem([N,X,Y],B), write('Nothing '), nl, !);
+(checkItem([N,X,Y],B), write('a/an '), write(N), nl, !)).
+
+/* isItemExist : menghasilkan true jika item pada posisi (X,Y) ada */
+isItemExist :- player_location(X,Y), item_list(B), !, (checkItem([_N,X,Y],B)).
+
+/* checkItem(X,[Y]) : menghasilkan true jika list X ada di list of list [Y] */
+checkItem(_A,[]) :- !, fail.
+checkItem(A,[HB|TB]) :-
+(same(A,HB));
+(checkItem(A,TB)).
+
+/* print9 : menuliskan 9 titik yang berada di sekitar player */
+print9 :- player_location(X,Y), A is X-1, B is X+1, C is Y-1, D is Y+1,
+print_target(A,C), print(' '), print_target(X,C), print(' '), print_target(B,C), nl,
+print_target(A,Y), print(' '), print_target(X,Y), print(' '), print_target(B,Y), nl,
+print_target(A,D), print(' '), print_target(X,D), print(' '), print_target(B,D), nl.
+
+/* print_target : menuliskan apa yang terdapat dalam sebuah tile berdasarkan skala prioritas */
+print_target(X,Y) :- item_list(IL), enemy_list(EL), factor(Min, Max), player_location(A,B),
+(((X < Min; X > Max; Y < Min; Y > Max), print('X'));
+(checkEnemy([_E1,_E2,X,Y],EL), print('E'));
+(checkItem([N1,X,Y],IL), type(aidkit,N1), print('M'));
+(checkItem([N1,X,Y],IL), type(weapon,N1), print('W'));
+(checkItem([N1,X,Y],IL), type(armor,N1), print('A'));
+(checkItem([N1,X,Y],IL), type(ammo,N1), print('B'));
+(X == A, Y == B, print('P'));
+(print('-'))).
+
+/* attack : menyerang enemy yang berada di kotak yang sama dengan player */
+attack :- player_location(X,Y), enemy_list(EL), checkEnemy([A,B,C,D],EL),
+(((X == C, Y == D), initiateAttack([A,B,C,D]));
+print('No enemy spotted'), nl).
+
+/* initiateAttack : melaksanakan attack terhadap enemy yang berada dekat player */
+initiateAttack([A,B,C,D]) :- player_weapon(X), player_ammo(Y), ammoVerification(X,Y), damageCalculation(X,B,Z),
+player_health(H), dealDamage(H,Z), deleteEnemy([A,B,C,D], X).
+
+/* ammoVerification : memastikan ammo yang dikeluarkan cukup untuk menyerang enemy */
+ammoVerification(X,Y) :-
+(X == 0, true);
+(X == m16, Y >= 10, A is Y - 10, Y is A);
+(X == m16, Y < 10, X = 0, print('Not enough ammo'), nl);
+(X == rpg7, Y >= 1, B is Y - 1, Y is B);
+(X == rpg7, Y < 1, X = 0, print('Not enough ammo'), nl).
+
+/* damageCalculation : menghitung damage yang diterima player berdasarkan kemampuan weapn */
+damageCalculation(X,Y,Z) :-
+(X == 0, Y == m16, Z is 50);
+(X == 0, Y == rpg7, Z is 80);
+(X == m16, Y == m16, Z is 30);
+(X == m16, Y == rpg7, Z is 50);
+(X == rpg7, Y == m16, Z is 20);
+(X == rpg7, Y == rpg7, Z is 30).
+
+/* dealDamage : memberikan damage ke player setelah dia menyerang enemy */
+dealDamage(H,Z) :-H is H-Z, ((H < 0, H = 0);(true)).
+
+/* deleteEnemy : menghapus enemy yang kalah diserang player dari map */
+deleteEnemy([A,B,C,D], X) :-
+(X == 0, write('You dont have any weapon, the enemy still remains'));
+(X \== 0, weaponDrop(B,C,D), ammoDrop(B,C,D), luckyDrop(C,D), enemy_list(L), delEnemy([A,B,C,D],[],L)).
+
+/* weaponDrop : menurunkan weapon yang dimiliki enemy ke dalam battlefield */
+weaponDrop(A,X,Y) :- addElIL([A,X,Y]).
+
+/* amnoDrop : menurunkan amno yang dimiliki weapon enemy ke dalam battlefield */
+ammoDrop(A,X,Y) :- ammo(A,B), addElIL([B,X,Y]).
+
+/* luckyDrop : menurunkan random item dari enemy ke dalam battlefield */
+luckyDrop(X,Y) :- random(2,8,A), addElIl([A,X,Y]);
+
+/* same([X],[Y]) : menghasilkan true jika list X sama dengan list Y */
+same([], []).
+same([H1|R1], [H2|R2]) :- H1 = H2, !, same(R1, R2).
 
 /* n : menggerakkan pemain satu petak ke arah utara  */
 n :-
@@ -341,38 +474,11 @@ spawnEnemy2(0) :- !.
 spawnEnemy2(Idx) :- random(1,3,A),iD(N,A),spawnEnemy3(N,Idx), Next is Idx-1, spawnEnemy2(Next), !.
 spawnEnemy3(N,Idx) :- factor(FMin,Max), Min is FMin + 1, random(Min,Max,X),random(Min,Max,Y),enemy_list(C),retractall(enemy_list(_A)),assertz(enemy_list([[Idx,N,X,Y]|C])),!.
 
-/* same([X],[Y]) : menghasilkan true jika list X sama dengan list Y */
-same([], []).
-same([H1|R1], [H2|R2]) :- H1 = H2, !, same(R1, R2).
-
-/* checkItem(X,[Y]) : menghasilkan true jika list X ada di list of list [Y] */
-checkItem(_A,[]) :- !, fail.
-checkItem(A,[HB|TB]) :-
-(same(A,HB));
-(checkItem(A,TB)).
-
-/* lookItem : menuliskan nama item pada posisi player */
-lookItem :-
-player_location(X,Y), item_list(B1), ((checkItem([_N,X,Y],B1),write(' You found '), print_item(X,Y));(true)),
-A is Y - 1, ((checkItem([_N1,X,A],B1),write(' To the north there is '), print_item(X,A));(true)),
-B is X + 1, ((checkItem([_N2,B,Y],B1),write(' To the east there is '), print_item(B,Y));(true)),
-C is Y + 1, ((checkItem([_N3,X,C],B1),write(' To the south there is '), print_item(X,C));(true)),
-D is X - 1, ((checkItem([_N4,D,Y],B1),write(' To the west there is '), print_item(D,Y));(true)).
-
-/* print_item(X,Y) : menuliskan nama item yang ada di posisi (X,Y) */
-print_item(X,Y) :-
-item_list(B),
-((\+checkItem([N,X,Y],B), write('Nothing '), nl, !);
-(checkItem([N,X,Y],B), write('a/an '), write(N), nl, !)).
-
-/* isItemExist : menghasilkan true jika item pada posisi (X,Y) ada */
-isItemExist :- player_location(X,Y), item_list(B), !, (checkItem([_N,X,Y],B)).
-
 /* delElIL(X,Y,[Z]) : menghapus item X pada list item tersedia di battle field X=[Nama item,absis item,ordinat item], Y=[], Z=list item2 yang ada di battlefield */
-delElIL(_X,Nl,[]) :- write(Nl),retractall(item_list(_A)),assertz(item_list(Nl)),!.
+delElIL(_X,Nl,[]) :- retractall(item_list(_A)),assertz(item_list(Nl)),!.
 delElIL(X,Nl,[HO|TO]) :-
-((same(HO,X),print('Deleted!'),write(Nl),nl,delElIL(X,Nl,TO),!);
-(\+same(HO,X),!,write(Nl),nl,delElIL(X,[HO|Nl],TO))).
+((same(HO,X),delElIL(X,Nl,TO),!);
+(\+same(HO,X),!,delElIL(X,[HO|Nl],TO))).
 
 /* addElIL(X) : menambahkan item X pada list item tersedia di battle field X=[Nama item,absis item,ordinat item] */
 addElIL([X,A,B]) :- item_list(Y), retractall(item_list(_)), L = [[X,A,B]|Y], assertz(item_list(L)), !.
@@ -380,10 +486,14 @@ addElIL([X,A,B]) :- item_list(Y), retractall(item_list(_)), L = [[X,A,B]|Y], ass
 /* use(X) :- menggunakan item X dan menghapusnya dari inventori */
 use(X) :-
 (inventory(I), checkInventory(X,I),
-((type(weapon,X), retractall(player_weapon(A)), assertz(player_weapon(X)), write(' '), write(X), write(' equipped'), nl, !);
-(type(armor,X), armor(X,Y), retractall(player_armor(A)), assertz(player_armor(Y)), write(' '), write(X), write(' equipped'), nl, !);
-(type(aidkit,X), aidkit(X,Y), player_health(A), retractall(player_health(A)), Z is A + Y, (Z =< 100, assertz(player_health(Z)), write(' '), write(X), write(' used'), nl, !); (Z > 100, assertz(player_health(100))), write(' '), write(X), write(' used'), nl, !);
-(type(ammo,X), player_weapon(W), ((ammo(W,X), weapon(W,Z), retractall(player_ammo(A)), assertz(player_ammo(Z)), write(' '), write(W), write(' loaded'), nl, !); (\+ammo(W,X), write(' ammo type doesn`t match'), nl, !)))), delInventory(X,[L],I), retractall(inventory(I)), assertz(inventory(L)));
+((type(weapon,X), retractall(player_weapon(A)), assertz(player_weapon(X)), delInventory(X,[L],I), retractall(inventory(I)), assertz(inventory(L)), write(' '), write(X), write(' equipped.'), nl, !);
+(type(armor,X), armor(X,Y), retractall(player_armor(A)), assertz(player_armor(Y)), delInventory(X,[L],I), retractall(inventory(I)), assertz(inventory(L)), write(' '), write(X), write(' equipped.'), nl, !);
+(type(aidkit,X), aidkit(X,Y), player_health(A), retractall(player_health(A)), Z is A + Y,
+((Z =< 100, assertz(player_health(Z)),  write(' '), write(X), write(' used.'), nl, !);
+((Z >= 100, assertz(player_health(100))), write(' '), write(X), write(' used'), nl, !)), delInventory(X,[L],I), retractall(inventory(I)), assertz(inventory(L)), !);
+(type(ammo,X), player_weapon(W),
+((ammo(W,X), weapon(W,Z), retractall(player_ammo(A)), assertz(player_ammo(Z)), delInventory(X,[L],I), retractall(inventory(I)), assertz(inventory(L)), write(' '), write(W), write(' loaded.'), nl, !);
+(\+ammo(W,X), write(' ammo type doesn`t match'), nl, !)))));
 (inventory(I), \+checkInventory(X,I), write(' You don\'t have the item.'), nl, !).
 
 /* drop(X) : menjatuhkan item X pada lokasi player */
@@ -400,8 +510,8 @@ checkInventory(X,[HI|TI]):-
 /* delInventory(X,Y,[Z]) : menghapus item X pada list item tersedia di battle field X=[Nama item,absis item,ordinat item], Y=[], Z=list item2 yang ada di battlefield*/
 delInventory(_X,I,[]) :- retractall(inventory(_A)),assertz(inventory(I)),!.
 delInventory(X,I,[HO|TO]) :-
-((same(HO,X), delInventory(X,I,TO), !);
-(\+same(HO,X), !, delInventory(X,[HO|I],TO))).
+((HO == X, delInventory(X,I,TO), !);
+(HO \= X, !, delInventory(X,[HO|I],TO))).
 
 /* enemymove :  */
 enemymove :- enemy_list(A), moveEnemy([],NL,A), retractall(enemy_list(_)), assertz(enemy_list(NL)), !.
@@ -409,6 +519,22 @@ enemymove :- enemy_list(A), moveEnemy([],NL,A), retractall(enemy_list(_)), asser
 /* moveEnemy :  */
 moveEnemy(L, NL, []) :- !,same(NL,L).
 moveEnemy(L, NL, [[_A,_B,X,Y]|_C]) :- random(1,4,Z), checkMove(X,Y,D,E,Z), moveEnemy([[_A,_B,D,E]|L], NL, _C).
+
+/* enemyDeadzone : menghapus enemy yang ada di deadzone dari enemy_list */
+enemyDeadzone :- enemy_list(L), iterateDelEnemy(L), !.
+iterateDelEnemy([]) :- !.
+iterateDelEnemy([[Id,N,X,Y]|T]) :- ((deadzone_hitEnemy(X,Y),enemy_list(L),delEnemy([Id,N,X,Y],[],L),iterateDelEnemy(T),!);(\+deadzone_hitEnemy(X,Y),iterateDelEnemy(T))).
+deadzone_hitEnemy(X,Y) :-
+(factor(Min, Max), X =< Min,!);
+(factor(Min, Max), X >= Max,!);
+(factor(Min, Max), Y >= Max,!);
+(factor(Min, Max), Y =< Min,!).
+
+/* delEnemy(X,Y,[Z]) : menghapus enemy dari enemy_list */
+delEnemy(_X,Nl,[]) :- retractall(enemy_list(_A)),assertz(enemy_list(Nl)),!.
+delEnemy(X,Nl,[HO|TO]) :-
+((same(HO,X),delEnemy(X,Nl,TO),!);
+(\+same(HO,X),!,delEnemy(X,[HO|Nl],TO))).
 
 /* checkMove :  */
 checkMove(X,Y,D,E,Z) :-
