@@ -94,6 +94,7 @@ iD(bandage,8).
 :- dynamic(drawMap/2).
 :- dynamic(enemy_count/1).
 :- dynamic(timer/1).
+:- dynamic(pokeCount/1).
 
 /* Deklarasi Rule */
 dynamic_facts :-
@@ -120,6 +121,7 @@ inventory([_A, _B, _C, _D, _E]).
 item_list([_H|_T]).
 enemy_list([_H|_T]).
 item_location(_ID,_X,_Y).
+pokeCount(_X).
 
 /* Inisialisasi Game */
 initialize_game :-
@@ -138,15 +140,6 @@ assertz(item_list([])),
 assertz(enemy_list([])),
 spawnItems,
 spawnEnemy.
-
-/*-------Debugging----------*/
-half :-
-enemy_count(X),
-Y is div(X,2),
-retractall(enemy_count(X)),
-assertz(enemy_count(Y)).
-
-/*--------------------*/
 
 /* Loop agar game tetap berjalan */
 game :-
@@ -173,6 +166,7 @@ read(X),
 nl,
 execute(X),
 (X==s; X==n; X==e; X==w; X==load(_); X==quit; X==take(_); X==drop(_); X==use(_); X==attack; win; lose),
+/*pokeDamage,*/
 !.
 
 /* start : memulai permainan, menampilkan judul dan instruksi permainan */
@@ -314,7 +308,6 @@ H is X - 1, I is Y + 1, ((checkItem([_N6,H,I],B1),write(' To the south west ther
 J is X - 1, ((checkItem([_N7,J,Y],B1),write(' To the west there is '), print_item(J,Y));(true)),
 K is X - 1, L is Y - 1, ((checkItem([_N8,K,L],B1),write(' To the north west there is '), print_item(K,L));(true)).
 
-
 /* print_item(X,Y) : menuliskan nama item yang ada di posisi (X,Y) */
 print_item(X,Y) :-
 item_list(B),
@@ -324,7 +317,7 @@ item_list(B),
 /* isItemExist : menghasilkan true jika item pada posisi (X,Y) ada */
 isItemExist :- player_location(X,Y), item_list(B), !, (checkItem([_N,X,Y],B)).
 
-/* checkItem(X,[Y]) : menghasilkan true jika list X ada di list of list [Y] */
+/* checkItem(X,Y) : menghasilkan true jika list X ada di list [Y] */
 checkItem(_A,[]) :- !, fail.
 checkItem(A,[HB|TB]) :-
 (same(A,HB));
@@ -353,18 +346,19 @@ attack :- player_location(X,Y), enemy_list(EL), ((checkEnemy([A,B,X,Y],EL), init
 
 /* initiateAttack : melaksanakan attack terhadap enemy yang berada dekat player */
 initiateAttack([A,B,C,D]) :- player_weapon(X), player_ammo(Y), ammoVerification(X,Y,I,J), retractall(player_ammo(_A)),
-assertz(player_ammo(J)), damageCalculation(I,B,Z), player_health(H), dealDamage(H,Z,Total), retractall(player_health(_)), assertz(player_health(Total)),
+assertz(player_ammo(J)), damageCalculation(I,B,Z), player_armor(K), player_health(H), dealDamage(H,K,Z,Total,Total2),
+retractall(player_health(_)), assertz(player_health(Total)), retractall(player_armor(_)), assertz(player_armor(Total2)),
 deleteEnemy([A,B,C,D], I).
 
 /* ammoVerification : memastikan ammo yang dikeluarkan cukup untuk menyerang enemy */
 ammoVerification(X,Y,A,B) :-
 (X == 0, A is X, B is Y,true);
-(X == m16, Y >= 10, B is Y - 10, A is X);
+(X == m16, Y >= 10, B is Y - 10, A = X);
 (X == m16, Y < 10, A is 0, B is Y, print('Not enough ammo for m16 (need 10)'), nl);
-(X == rpg7, Y >= 1, B is Y - 1, A is X);
+(X == rpg7, Y >= 1, B is Y - 1, A = X);
 (X == rpg7, Y < 1, A is 0, B is Y, print('Not enough ammo for rpg7 (need 1)'), nl).
 
-/* damageCalculation : menghitung damage yang diterima player berdasarkan kemampuan weapn */
+/* damageCalculation : menghitung damage yang diterima player berdasarkan kemampuan weapon */
 damageCalculation(X,Y,Z) :-
 ((X == 0, Y == m16, Z is 50);
 (X == 0, Y == rpg7, Z is 80);
@@ -374,7 +368,8 @@ damageCalculation(X,Y,Z) :-
 (X == rpg7, Y == rpg7, Z is 30)).
 
 /* dealDamage : memberikan damage ke player setelah dia menyerang enemy */
-dealDamage(H,Z,Total) :- Total is H-Z, ((Total < 0, Total = 0);(true)).
+dealDamage(H,K,Z,Total,Total2) :- Total2 is K-Z,
+((Total2 < 0, Total is H-Total2, Total2 = 0, ((Total < 0, Total = 0);(true)));(Total = H)).
 
 /* deleteEnemy : menghapus enemy yang kalah diserang player dari map */
 deleteEnemy([A,B,C,D], X) :-
@@ -390,7 +385,7 @@ ammoDrop(A,X,Y) :- ammo(A,B), addElIL([B,X,Y]), print('Enemy dropped '), print(B
 /* luckyDrop : menurunkan random item dari enemy ke dalam battlefield */
 luckyDrop(X,Y) :- random(0,5,Z), ((Z >= 4, random(2,8,A), addElIl([A,X,Y]), print('Lucky! Enemy dropped another '), print(A), nl);(true)).
 
-/* same([X],[Y]) : menghasilkan true jika list X sama dengan list Y */
+/* same(X,Y) : menghasilkan true jika list X sama dengan list Y */
 same([], []).
 same([H1|R1], [H2|R2]) :- H1 = H2, !, same(R1, R2).
 
@@ -472,7 +467,7 @@ random(1,15,A), !,
 ((A\=5,!);
 (A==5,random(1,8,B),iD(N,B),factor(Min,Max),random(Min,Max,X),random(Min,Max,Y),item_list(C),retractall(item_list(C)),assertz(item_list([[N,X,Y]|C])))).
 
-/* spawnItems : melakukan spawn item-item yang terdapat dalam inventori ke dalam battlefield */
+/* spawnItems : melakukan spawn item-item secara random ke dalam battlefield */
 spawnItems :- spawnItems2(8),!.
 spawnItems2(0) :- !.
 spawnItems2(Idx) :- random(2,4,A),iD(N,Idx),spawnItems3(A,N), Next is Idx-1, spawnItems2(Next), !.
@@ -526,10 +521,10 @@ delInventory(X,I,[HO|TO]) :-
 ((HO == X, delInventory(X,I,TO), !);
 (HO \= X, !, delInventory(X,[HO|I],TO))).
 
-/* enemymove :  */
+/* enemymove :  Untuk menjalankan moveEnemy*/
 enemymove :- enemy_list(A), moveEnemy([],NL,A), retractall(enemy_list(_)), assertz(enemy_list(NL)), !.
 
-/* moveEnemy :  */
+/* moveEnemy :  Menggerakan setiap elemen list enemy menurut aturan checkMove*/
 moveEnemy(L, NL, []) :- !,same(NL,L).
 moveEnemy(L, NL, [[_A,_B,X,Y]|_C]) :- random(1,5,Z), checkMove(X,Y,D,E,Z), moveEnemy([[_A,_B,D,E]|L], NL, _C).
 
@@ -553,7 +548,7 @@ delEnemy(X,Nl,[HO|TO]) :-
 fliplist([],S,N) :- same(S,N),!.
 fliplist([H|T],S,N) :- fliplist(T,[H|S],N),!.
 
-/* checkMove :  */
+/* checkMove : untuk memvalidasi gerakan yang akan dilakukan musuh */
 checkMove(X,Y,D,E,Z) :-
 (factor(Min,Max), Z =:= 1, A is X - 1, ((A > Min, D is A, E is Y);(D is X, E is Y)),!);
 (factor(Min,Max), Z =:= 2, B is X + 1, ((B < Max, D is B, E is Y);(D is X, E is Y)),!);
@@ -595,3 +590,15 @@ banyak_isi_inventory([_Head | Rest], N) :- banyak_isi_inventory(Rest, M), N is M
 
 /* print_enemy_count : menuliskan jumlah musuh tersisa */
 print_enemy_count :- enemy_count(X), write(X), nl.
+
+/* pokeDamage : player mendapatkan damage berdasarkan jumlah enemy di sekitarnya */
+pokeDamage :- player_location(X,Y), A is X-1, B is X+1, C is Y-1, D is Y+1, player_health(G),
+retractall(pokeCount(_)),assertz(pokeCount(0)),
+poke(A,C), poke(X,C), poke(B,C),
+poke(A,Y), poke(X,Y), poke(B,Y),
+poke(A,D), poke(X,D), poke(B,D),
+pokeCount(Count), retractall(player_health(_)), Ng is G-Count, assertz(player_health(Ng)),
+player_health(I), (((I < 0), assertz(player_health(0)));assertz(player_health(I))).
+
+/* poke : mengurangi nyawa player sebesar 1 jika ada enemy di tile tersebut */
+poke(X,Y) :- enemy_list(L), ((!,checkEnemy([_,_,X,Y],L), pokeCount(C), retractall(pokeCount(_)), assertz(pokeCount(C+1)));(true)).
