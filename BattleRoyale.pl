@@ -94,7 +94,6 @@ iD(bandage,8).
 :- dynamic(drawMap/2).
 :- dynamic(enemy_count/1).
 :- dynamic(timer/1).
-:- dynamic(pokeCount/1).
 
 /* Deklarasi Rule */
 dynamic_facts :-
@@ -121,7 +120,6 @@ inventory([_A, _B, _C, _D, _E]).
 item_list([_H|_T]).
 enemy_list([_H|_T]).
 item_location(_ID,_X,_Y).
-pokeCount(_X).
 
 /* Inisialisasi Game */
 initialize_game :-
@@ -165,8 +163,7 @@ write(' << Command >> '),
 read(X),
 nl,
 execute(X),
-(X==s; X==n; X==e; X==w; X==load(_); X==quit; X==take(_); X==drop(_); X==use(_); X==attack; win; lose),
-/*pokeDamage,*/
+(X==s; X==n; X==e; X==w; X=load(_); X==quit; X=take(_); X=drop(_); X=use(_); X==attack; win; lose),
 !.
 
 /* start : memulai permainan, menampilkan judul dan instruksi permainan */
@@ -346,8 +343,8 @@ attack :- player_location(X,Y), enemy_list(EL), ((checkEnemy([A,B,X,Y],EL), init
 
 /* initiateAttack : melaksanakan attack terhadap enemy yang berada dekat player */
 initiateAttack([A,B,C,D]) :- player_weapon(X), player_ammo(Y), ammoVerification(X,Y,I,J), retractall(player_ammo(_A)),
-assertz(player_ammo(J)), damageCalculation(I,B,Z), player_armor(K), player_health(H), dealDamage(H,K,Z,Total,Total2),
-retractall(player_health(_)), assertz(player_health(Total)), retractall(player_armor(_)), assertz(player_armor(Total2)),
+assertz(player_ammo(J)), damageCalculation(I,B,Z), player_armor(K), player_health(H), dealDamage(H,K,Z,Total,_Total2,Total3),
+retractall(player_health(_)), assertz(player_health(Total)), retractall(player_armor(_)), assertz(player_armor(Total3)),
 deleteEnemy([A,B,C,D], I).
 
 /* ammoVerification : memastikan ammo yang dikeluarkan cukup untuk menyerang enemy */
@@ -368,22 +365,19 @@ damageCalculation(X,Y,Z) :-
 (X == rpg7, Y == rpg7, Z is 30)).
 
 /* dealDamage : memberikan damage ke player setelah dia menyerang enemy */
-dealDamage(H,K,Z,Total,Total2) :- Total2 is K-Z,
-((Total2 < 0, Total is H-Total2, Total2 = 0, ((Total < 0, Total = 0);(true)));(Total = H)).
+dealDamage(H,K,Z,Total,Total2,Total3) :- Total2 is K-Z,
+((Total2 < 0, Total is H+Total2, Total3 is 0, ((Total < 0, Total = 0);(true)));(Total is H, Total3 is Total2)).
 
 /* deleteEnemy : menghapus enemy yang kalah diserang player dari map */
 deleteEnemy([A,B,C,D], X) :-
 (X == 0, write('You dont have any weapon, the enemy still remains'));
-(X \== 0, weaponDrop(B,C,D), ammoDrop(B,C,D), luckyDrop(C,D), enemy_list(L), delEnemy([A,B,C,D],[],L)).
+(X \== 0, weaponDrop(B,C,D), ammoDrop(B,C,D), enemy_list(L), delEnemy([A,B,C,D],[],L)).
 
 /* weaponDrop : menurunkan weapon yang dimiliki enemy ke dalam battlefield */
 weaponDrop(A,X,Y) :- addElIL([A,X,Y]), print('Enemy dropped '), print(A), nl.
 
 /* amnoDrop : menurunkan amno yang dimiliki weapon enemy ke dalam battlefield */
 ammoDrop(A,X,Y) :- ammo(A,B), addElIL([B,X,Y]), print('Enemy dropped '), print(B), nl.
-
-/* luckyDrop : menurunkan random item dari enemy ke dalam battlefield */
-luckyDrop(X,Y) :- random(0,5,Z), ((Z >= 4, random(2,8,A), addElIl([A,X,Y]), print('Lucky! Enemy dropped another '), print(A), nl);(true)).
 
 /* same(X,Y) : menghasilkan true jika list X sama dengan list Y */
 same([], []).
@@ -494,7 +488,7 @@ addElIL([X,A,B]) :- item_list(Y), retractall(item_list(_)), L = [[X,A,B]|Y], ass
 /* use(X) :- menggunakan item X dan menghapusnya dari inventori */
 use(X) :-
 (inventory(I), checkInventory(X,I),
-((type(weapon,X), retractall(player_weapon(A)), assertz(player_weapon(X)), delInventory(X,[],I), write(' '), write(X), write(' equipped.'), nl, !);
+((type(weapon,X), retractall(player_weapon(A)), assertz(player_weapon(X)), delInventory(X,[],I), !, write(' '), write(X), write(' equipped.'), nl, !);
 (type(armor,X), armor(X,Y), retractall(player_armor(A)), assertz(player_armor(Y)), delInventory(X,[],I),  write(' '), write(X), write(' equipped.'), nl, !);
 (type(aidkit,X), aidkit(X,Y), player_health(A), retractall(player_health(A)), Z is A + Y,
 ((Z =< 100, assertz(player_health(Z)),  write(' '), write(X), write(' used.'), nl, !);
@@ -561,8 +555,9 @@ status :-
 write(' Health     : '), print_health,
 write(' Armor      : '), print_armor,
 write(' Weapon     : '), print_weapon, nl,
+print_ammo,
 write(' Enemy left : '), print_enemy_count,
-write(' Inventory  : '), inventory(X), print_inventory(X), nl.
+write(' Inventory  : '), inventory(X), nl, print_inventory(X), nl.
 
 /* print_health : menuliskan health player */
 print_health :- player_health(X), write(X), nl.
@@ -577,11 +572,16 @@ print_armor :- player_armor(X), write(X), nl.
 print_weapon :- player_weapon(X), X == 0, write('none').
 print_weapon :- player_weapon(X), write(X).
 
+/* print_ammo : menuliskan ammo player */
+print_ammo :-
+(player_ammo(X), X \= 0, write(' Ammo       : '), write(X), nl);
+(true).
+
 /* print_inventory : menuliskan isi inventory player */
 print_inventory([]).
 print_inventory([Head | _Rest]) :- Head == 0, inventory(X), banyak_isi_inventory(X, N), N > 0, !.
 print_inventory([Head | _Rest]) :- Head == 0, write('Your inventory is empty!'), !.
-print_inventory([Head | Rest]) :- write(Head), write(' '), print_inventory(Rest).
+print_inventory([Head | Rest]) :- write(' '), write(Head), nl, print_inventory(Rest).
 
 /* banyak_isi_inventory : menuliskan jumlah isi inventory player */
 banyak_isi_inventory([], N) :- N is 0.
