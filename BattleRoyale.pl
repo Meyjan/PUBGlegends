@@ -247,30 +247,30 @@ look :- lookItem, lookEnemy, print9.
 
 /* save(File) : menyimpan data ke File */
 save(File) :- atom_concat(File,'.txt',S),open(S,write,ID),
-  player_location(X,Y),write(ID,X), write(ID,'.'), nl(ID), write(ID,Y), write(ID,'.'), nl(ID),
-  player_health(Hp),write(ID,Hp), write(ID,'.'), nl(ID),
-  player_armor(Ar),write(ID,Ar), write(ID,'.'), nl(ID),
-  player_weapon(Wea), write(ID,Wea), write(ID,'.'), nl(ID),
-  player_ammo(Amm), write(ID,Amm), write(ID,'.'), nl(ID),
-  item_list(Il), write(ID,Il), write(ID,'.'), nl(ID),
-  enemy_list(El), write(ID,El), write(ID,'.'), nl(ID),
-  inventory(Inv), write(ID,Inv), write(ID,'.'), nl(ID),
-  enemy_count(Ec), write(ID,Ec), write(ID,'.'), nl(ID),
-  timer(T), write(ID,T), write(ID,'.'), nl(ID),
-  close(ID).
+player_location(X,Y),write(ID,X), write(ID,'.'), nl(ID), write(ID,Y), write(ID,'.'), nl(ID),
+player_health(Hp),write(ID,Hp), write(ID,'.'), nl(ID),
+player_armor(Ar),write(ID,Ar), write(ID,'.'), nl(ID),
+player_weapon(Wea), write(ID,Wea), write(ID,'.'), nl(ID),
+player_ammo(Amm), write(ID,Amm), write(ID,'.'), nl(ID),
+item_list(Il), write(ID,Il), write(ID,'.'), nl(ID),
+enemy_list(El), write(ID,El), write(ID,'.'), nl(ID),
+inventory(Inv), write(ID,Inv), write(ID,'.'), nl(ID),
+enemy_count(Ec), write(ID,Ec), write(ID,'.'), nl(ID),
+timer(T), write(ID,T), write(ID,'.'), nl(ID),
+close(ID).
 
 /* load(File) : me-load data dari FIle */
 loadsavefile(File) :- atom_concat(File,'.txt',S),open(S,read,ID),
-  read(ID,X), read(ID,Y), retractall(player_location(_X,_Y)), assertz(player_location(X,Y)),
-  read(ID,Hp), retractall(player_health(_Hp)), assertz(player_health(Hp)),
-  read(ID,Ar), retractall(player_armor(_Ar)), assertz(player_armor(Ar)),
-  read(ID,Wea), retractall(player_weapon(_Wea)), assertz(player_weapon(Wea)),
-  read(ID,Amm), retractall(player_ammo(_Amm)), assertz(player_ammo(Amm)),
-  read(ID,Il), retractall(item_list(_Il)), assertz(item_list(Il)),
-  read(ID,El), retractall(enemy_list(_El)), assertz(enemy_list(El)),
-  read(ID,Inv), retractall(inventory(_Inv)), assertz(inventory(Inv)),
-  read(ID,Ec), retractall(enemy_count(_Ec)), assertz(enemy_count(Ec)),
-  read(ID, T), retractall(timer(T)), assertz(timer(T)).
+read(ID,X), read(ID,Y), retractall(player_location(_X,_Y)), assertz(player_location(X,Y)),
+read(ID,Hp), retractall(player_health(_Hp)), assertz(player_health(Hp)),
+read(ID,Ar), retractall(player_armor(_Ar)), assertz(player_armor(Ar)),
+read(ID,Wea), retractall(player_weapon(_Wea)), assertz(player_weapon(Wea)),
+read(ID,Amm), retractall(player_ammo(_Amm)), assertz(player_ammo(Amm)),
+read(ID,Il), retractall(item_list(_Il)), assertz(item_list(Il)),
+read(ID,El), retractall(enemy_list(_El)), assertz(enemy_list(El)),
+read(ID,Inv), retractall(inventory(_Inv)), assertz(inventory(Inv)),
+read(ID,Ec), retractall(enemy_count(_Ec)), assertz(enemy_count(Ec)),
+read(ID, T), retractall(timer(T)), assertz(timer(T)).
 
 /* lookEnemy : menuliskan nama item pada posisi player */
 lookEnemy :-
@@ -590,15 +590,3 @@ banyak_isi_inventory([_Head | Rest], N) :- banyak_isi_inventory(Rest, M), N is M
 
 /* print_enemy_count : menuliskan jumlah musuh tersisa */
 print_enemy_count :- enemy_count(X), write(X), nl.
-
-/* pokeDamage : player mendapatkan damage berdasarkan jumlah enemy di sekitarnya */
-pokeDamage :- player_location(X,Y), A is X-1, B is X+1, C is Y-1, D is Y+1, player_health(G),
-retractall(pokeCount(_)),assertz(pokeCount(0)),
-poke(A,C), poke(X,C), poke(B,C),
-poke(A,Y), poke(X,Y), poke(B,Y),
-poke(A,D), poke(X,D), poke(B,D),
-pokeCount(Count), retractall(player_health(_)), Ng is G-Count, assertz(player_health(Ng)),
-player_health(I), (((I < 0), assertz(player_health(0)));assertz(player_health(I))).
-
-/* poke : mengurangi nyawa player sebesar 1 jika ada enemy di tile tersebut */
-poke(X,Y) :- enemy_list(L), ((!,checkEnemy([_,_,X,Y],L), pokeCount(C), retractall(pokeCount(_)), assertz(pokeCount(C+1)));(true)).
