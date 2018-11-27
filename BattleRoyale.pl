@@ -7,11 +7,6 @@
 
 /* Implementasi fungsi execute */
 execute(help) :- help, nl, !.
-execute(half):- half,!.
-execute(print_health):- print_health, !.
-execute(print_location):- print_location, !.
-execute(print_armor):- print_armor, !.
-execute(deadzone_hit) :- deadzone_hit, !.
 execute(quit) :- quit, nl, !.
 execute(look) :- look, nl, !.
 execute(map) :- drawMap(1,1), nl, !.
